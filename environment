@@ -1,0 +1,19 @@
+#!/bin/bash
+cwd=`pwd`
+
+cd "~/CMSSW_15_1_X_2025-03-24-2300"
+
+if [ -f "environment" ]
+then
+	source environment
+else
+	source /cvmfs/cms.cern.ch/cmsset_default.sh
+	cd src
+	eval `scramv1 runtime -sh`
+fi
+
+export CMSSW_SEARCH_PATH="$CMSSW_SEARCH_PATH:$cwd"
+
+cd "$cwd"
+
+echo "CMSSW_BASE=$CMSSW_BASE"

@@ -1,0 +1,146 @@
+#!/bin/bash
+
+# Configuration
+periods=("2016" "2017" "2018" "2022")
+MAX_RUNTIME=3600  # 1 hour in seconds
+REQUEST_MEMORY="2000MB"
+REQUEST_DISK="1GB"
+
+#----------------------------------------------------------------------------------------------------
+
+function Run() {
+    local version="$1"
+    echo "[INFO] Processing version: $version"
+    
+    # Create version directory
+    mkdir -p "data/$version" || { echo "[ERROR] Failed to create data/$version"; exit 1; }
+    
+    # Create info file with environment details
+    echo "[INFO] Creating environment info file..."
+    {
+        echo "DATE: $(date)"
+        echo "--------------------------------------------------"
+        echo "CMSSW base: $CMSSW_BASE"
+        echo "CMSSW history:"
+        (cd "$CMSSW_BASE/src" && git log --oneline | head -n 3)
+        echo "CMSSW status:"
+        (cd "$CMSSW_BASE/src" && git status --short)
+        echo "--------------------------------------------------"
+        echo "This repo at:"
+        git log --oneline | head -n 3
+        echo "This repo status:"
+        git status --short
+    } > "data/$version/info" || { echo "[ERROR] Failed to create info file"; exit 1; }
+
+    # Create job wrapper script
+    echo "[INFO] Creating job wrapper script..."
+    cat > "run_job.sh" <<EOF
+#!/bin/bash
+period=\$1
+version="$version"
+base_dir="\$PWD"
+
+job_dir="\$base_dir/data/\$version/\$period"
+echo "[JOB] Starting job for period: \$period"
+echo "[JOB] Working directory: \$job_dir"
+
+cd "\$job_dir" || { echo "[JOB-ERROR] Failed to enter \$job_dir"; exit 1; }
+[[ -x ./job ]] || { echo "[JOB-ERROR] job script not executable"; exit 1; }
+
+./job
+EXIT_CODE=\$?
+echo "[JOB] Finished with exit code \$EXIT_CODE"
+exit \$EXIT_CODE
+EOF
+    chmod +x "run_job.sh" || { echo "[ERROR] Failed to make run_job.sh executable"; exit 1; }
+
+    # Create HTCondor submit file
+    local condor_file_sub="data/$version/condor.sub"
+    local base_dir_full=$(pwd -P)
+    
+    echo "[INFO] Creating HTCondor submit file..."
+    cat > "$condor_file_sub" <<EOF
+universe = vanilla
+executable = $base_dir_full/run_job.sh
+arguments = \$(period)
+
+should_transfer_files = YES
+when_to_transfer_output = ON_EXIT
+transfer_input_files = $base_dir_full/data/$version/\$(period)
+
+output = $base_dir_full/data/$version/\$(period)/job.out
+error = $base_dir_full/data/$version/\$(period)/job.err
+log = $base_dir_full/data/$version/condor.log
+
+request_cpus = 1
+request_memory = $REQUEST_MEMORY
+request_disk = $REQUEST_DISK
++MaxRuntime = $MAX_RUNTIME
+requirements = (OpSysAndVer == "EL9")
+
+EOF
+
+    # Process each period
+    for period in "${periods[@]}"; do
+        echo "[INFO] Setting up period: $period"
+        local dir="data/$version/$period"
+        local full_dir="$base_dir_full/data/$version/$period"
+        
+        # Create and prepare directory
+        mkdir -p "$dir" || { echo "[ERROR] Failed to create $dir"; continue; }
+        
+        # Copy templates and settings
+        if [[ -d "templates" ]]; then
+            cp -R templates/* "$dir" || echo "[WARNING] Failed to copy some template files"
+        fi
+        
+        if [[ -d "settings/$period" ]]; then
+            cp settings/"$period"/* "$dir" || echo "[WARNING] Failed to copy some settings"
+        fi
+        
+        # Clean previous outputs
+        rm -f "$dir"/*.root "$dir"/*.log "$dir"/job.{out,err}
+        
+        # Create job script from template
+        if [[ -f "template_job" ]]; then
+            sed "
+                s|\$sw_dir|$CMSSW_BASE|g;
+                s|\$job_dir|$full_dir|g;
+                s|\$top_dir|$base_dir_full|g;
+                s|\$version|$version|g;
+                s|\$period|$period|g;
+            " template_job > "$dir/job" || { echo "[ERROR] Failed to create job script"; continue; }
+            
+            chmod u+x "$dir/job" || { echo "[ERROR] Failed to make job executable"; continue; }
+        else
+            echo "[ERROR] template_job not found"
+            continue
+        fi
+        
+        # Add to condor submission
+        echo "period=$period" >> "$condor_file_sub"
+        echo "queue" >> "$condor_file_sub"
+    done
+
+    # Submit jobs
+    echo "[INFO] Submitting jobs..."
+    condor_submit "$condor_file_sub" || { echo "[ERROR] condor_submit failed"; exit 1; }
+    echo "[SUCCESS] Jobs submitted successfully!"
+}
+
+#----------------------------------------------------------------------------------------------------
+
+# Main execution
+if [[ $# -eq 0 ]]; then
+    echo "ERROR: Version not specified"
+    echo "USAGE: $0 <version>"
+    exit 1
+fi
+
+# First clean any previous build
+make clean
+
+make || exit 1
+
+version="$1"
+Run "$version"
