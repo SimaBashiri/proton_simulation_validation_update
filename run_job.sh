@@ -1,6 +1,6 @@
 #!/bin/bash
 period=$1
-version="1"
+version="28March"
 base_dir="$PWD"
 
 job_dir="$base_dir/data/$version/$period"

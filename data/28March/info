@@ -1,0 +1,79 @@
+DATE: Fri Mar 28 20:50:28 CET 2025
+--------------------------------------------------
+CMSSW base: /afs/cern.ch/user/s/sibashir/CMSSW_15_1_X_2025-03-24-2300
+CMSSW history:
+CMSSW status:
+?? ../../.Xauthority
+?? ../../.bash_history
+?? ../../.bash_madgraph
+?? ../../.bash_profile
+?? ../../.bashrc
+?? ../../.cache/
+?? ../../.conda/
+?? ../../.condarc
+?? ../../.condor/
+?? ../../.config/
+?? ../../.crab3
+?? ../../.dasmaps/
+?? ../../.dbus/
+?? ../../.dotnet/
+?? ../../.esd_auth
+?? ../../.git-credentials
+?? ../../.gitconfig
+?? ../../.globus/
+?? ../../.lesshst
+?? ../../.local/
+?? ../../.parallel/
+?? ../../.pyenv/
+?? ../../.python_history
+?? ../../.root_hist
+?? ../../.ssh/
+?? ../../.triton/
+?? ../../.vim/
+?? ../../.viminfo
+?? ../../.vscode-server/
+?? ../../.wget-hsts
+?? ../../2011lumi.txt
+?? ../../CMSSW_12_1_0_pre3/
+?? ../../CMSSW_14_1_0_pre4/
+?? ../
+?? ../../DiffractiveForwardAnalysis/
+?? ../../LHAPDF-6.4.0/
+?? ../../LHAPDF-6.5.4.tar.gz
+?? ../../LHAPDF-6.5.4/
+?? ../../LZ4/
+?? ../../Miniforge3-Linux-x86_64.sh
+?? ../../TopReconstruction/
+?? ../../Validation/
+?? ../../a.sh
+?? ../../data/
+?? ../../encoded_password.txt
+?? ../../eo.sh
+?? ../../fpmc/
+?? ../../gen/
+?? ../../local/
+?? ../../myCertificate.p12
+?? ../../neut/
+?? ../../oradiag_sibashir/
+?? ../../plugins/
+?? ../../proton_simulation_validation/
+?? ../../public/
+?? ../../s/
+?? ../../unfold.py
+?? ../../usercert.pem
+?? ../../usercert_base64.txt
+?? ../../userkey.pem
+?? ../../userkey_base64.txt
+?? ../../usr/
+?? ../../venv/
+?? ../../vf/
+?? ../../zzz/
+--------------------------------------------------
+This repo at:
+93a1c69 Initial commit
+29044a3 Initial commit
+3115af5 Initial commit
+This repo status:
+ M collect_systematics
+ M run_job.sh
+?? data/

@@ -1,0 +1,42 @@
+#!/bin/sh
+export HOME="r"
+
+source "/cvmfs/cms.cern.ch/cmsset_default.sh"
+cd "/afs/cern.ch/user/s/sibashir/CMSSW_15_1_X_2025-03-24-2300"
+cmsenv
+cd "/afs/cern.ch/user/s/sibashir/CMSSW_15_1_X_2025-03-24-2300/src/proton_simulation_validation_update/data/28March/2016"
+
+date > "submitted"
+
+export CMSSW_SEARCH_PATH="$CMSSW_SEARCH_PATH:${PWD}:/afs/cern.ch/user/s/sibashir/CMSSW_15_1_X_2025-03-24-2300/src/proton_simulation_validation_update"
+export CMSSW_DATA_PATH="/afs"
+
+# grid proxy configuration
+export X509_USER_PROXY="~/x509up_u2177"
+
+echo "--------------------"
+echo "CMSSW version: $CMSSW_VERSION"
+echo "CMSSW installation: $CMSSW_BASE"
+echo "start: `date`"
+echo "--------------------"
+
+./run_all "28March" "2016"
+rc="$?"
+
+success="1"
+
+if [ "$rc" -ne 0 ]
+then
+	success="0"
+	echo "process crashed with return code $rc"
+fi
+
+echo "--------------------"
+echo "end: `date`"
+
+date > "finished"
+
+if [ "$success" == "1" ]
+then
+	date > "success"
+fi

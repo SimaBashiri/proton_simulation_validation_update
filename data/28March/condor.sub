@@ -1,0 +1,26 @@
+universe = vanilla
+executable = /afs/cern.ch/user/s/sibashir/CMSSW_15_1_X_2025-03-24-2300/src/proton_simulation_validation_update/run_job.sh
+arguments = $(period)
+
+should_transfer_files = YES
+when_to_transfer_output = ON_EXIT
+transfer_input_files = /afs/cern.ch/user/s/sibashir/CMSSW_15_1_X_2025-03-24-2300/src/proton_simulation_validation_update/data/28March/$(period)
+
+output = /afs/cern.ch/user/s/sibashir/CMSSW_15_1_X_2025-03-24-2300/src/proton_simulation_validation_update/data/28March/$(period)/job.out
+error = /afs/cern.ch/user/s/sibashir/CMSSW_15_1_X_2025-03-24-2300/src/proton_simulation_validation_update/data/28March/$(period)/job.err
+log = /afs/cern.ch/user/s/sibashir/CMSSW_15_1_X_2025-03-24-2300/src/proton_simulation_validation_update/data/28March/condor.log
+
+request_cpus = 1
+request_memory = 2000MB
+request_disk = 1GB
++MaxRuntime = 3600
+requirements = (OpSysAndVer == "EL9")
+
+period=2016
+queue
+period=2017
+queue
+period=2018
+queue
+period=2022
+queue

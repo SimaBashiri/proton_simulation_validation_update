@@ -1,0 +1,126 @@
+#!/bin/bash
+
+source "../settings.sh"
+
+function RunOne()
+{
+
+	local config="$1"
+	local era_mod_path="$2"
+	local era="$3"
+
+	local scenario="$4"
+	local factor="$5"
+
+	local tag="${scenario}_${factor}"
+
+	local cfgFile="optics_${tag}_cfg.py"
+	local logFile="optics_${tag}.log"
+	local aligFile="optics_${tag}.xml"
+	local out_lhcInfo="optics_${tag}_lhcInfo.root"
+	local out_tracks="optics_${tag}_tracks.root"
+	local out_protons="optics_${tag}_protons.root"
+
+
+
+	# cat "template_cfg.py" | sed "\
+	# 		s|\$scenario|$scenario|; \
+	# 		s|\$factor|$factor|; \
+	# 	" > "$dir/$cfgFile"
+
+
+
+
+
+
+	cat "$dir/template_cfg.py" | sed "\
+			s|\$ERA_MOD_PATH|$era_mod_path|;\
+			s|\$ERA|$era|;\
+			s|\$CONFIG|$config|;\
+			s|\$N_EVENTS|$events|;\
+			s|\$OUT_LHCINFO|$out_lhcInfo|;\
+			s|\$OUT_TRACKS|$out_tracks|;\
+			s|\$OUT_PROTONS|$out_protons|;\
+
+			s|\$scenario|$scenario|; \
+			s|\$factor|$factor|; \
+		" > "$dir/$cfgFile"
+
+	# cmsRun "$cfg" &> "$log" &
+	pids="$pids $!"
+
+
+
+	# cp "template_cfg.py" "$dir/$cfgFile"
+
+
+
+
+	(
+		echo "process.maxEvents.input = int($events)"
+		echo "process.ctppsProtonReconstructionSimulationValidator.outputFile = \"optics_${tag}_validation.root\""
+		# echo "process.ctppsOpticsPlotter_mod.outputFile = \"optics_${tag}_opt_fun.root\""
+	) >> "$dir/$cfgFile"
+
+	cd "$dir"
+
+	cmsRun "$cfgFile" &> "$logFile" &
+
+	cd - &> /dev/null
+}
+
+#----------------------------------------------------------------------------------------------------
+
+function Run()
+{
+	events="$1"
+	dir="."
+
+	# meaning of parameters, from left to right:
+	#  - scenario label
+	#  - factor or number of sigmas
+	# RunOne "none" "1"
+
+	# RunOne "xd" "1"
+	# RunOne "Lx" "1"
+	# RunOne "Lpx" "1"
+	# RunOne "Lpy" "1"
+
+	#RunOne "Lx-scale" "2"
+
+
+
+	# if [[ "$2" == "2016" || "$2" == "2017" || "$2" == "2018" ]]; then
+    # args =  "$2" "Configuration.Eras" "Run2_$2"
+	# fi
+
+	# if [[ "$2" == "2022" ]]; then
+	# 	args = "2022" "Configuration.ProcessModifiers" "Run3_CTPPS_directSim"
+	# fi
+
+	# Check the input argument and set the appropriate configuration
+	if [[ "$2" == "2016" || "$2" == "2017" || "$2" == "2018" ]]; then
+		args=("$2" "Configuration.Eras" "Run2_$2" )
+	elif [[ "$2" == "2022" ]]; then
+		args=("2022" "Configuration.ProcessModifiers" "Run3_CTPPS_directSim")
+	else
+		echo "Invalid year: $2"
+		exit 1
+	fi
+
+
+
+	# Call RunOne with the appropriate arguments
+	RunOne "${args[0]}" "${args[1]}" "${args[2]}" "none" "1"
+	RunOne "${args[0]}" "${args[1]}" "${args[2]}"  "xd" "1"
+	RunOne "${args[0]}" "${args[1]}" "${args[2]}"  "Lx" "1"
+	RunOne "${args[0]}" "${args[1]}" "${args[2]}"  "Lpx" "1"
+	RunOne "${args[0]}" "${args[1]}" "${args[2]}"  "Lpy" "1"
+
+}
+
+#----------------------------------------------------------------------------------------------------
+
+Run "$1" "$2"
+
+wait

@@ -38,7 +38,7 @@ function Run() {
 #!/bin/bash
 period=\$1
 version="$version"
-base_dir="\$PWD"
+base_dir="$PWD"
 
 job_dir="\$base_dir/data/\$version/\$period"
 echo "[JOB] Starting job for period: \$period"

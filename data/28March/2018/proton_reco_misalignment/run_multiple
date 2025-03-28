@@ -1,0 +1,132 @@
+#!/bin/bash
+
+source "../settings.sh"
+
+
+
+
+#----------------------------------------------------------------------------------------------------
+
+pids=""
+
+function RunOne()
+{
+
+	local config="$1"
+	local era_mod_path="$2"
+	local era="$3"
+
+
+	local tag="$4"
+	local de_x_N="$5"
+	local de_x_F="$6"
+	local de_y_N="$7"
+	local de_y_F="$8"
+
+	local cfgFile="misalignment_${tag}_cfg.py"
+	local logFile="misalignment_${tag}.log"
+	local aligFile="misalignment_${tag}.xml"
+	local out_lhcInfo="misalignment_${tag}_lhcInfo.root"
+	local out_tracks="misalignment_${tag}_tracks.root"
+	local out_protons="misalignment_${tag}_protons.root"
+
+
+	cat "template.xml" | sed "\
+			s|\$rpId_45_N|$rpId_45_N|; \
+			s|\$rpId_45_F|$rpId_45_F|; \
+			s|\$rpId_56_N|$rpId_56_N|; \
+			s|\$rpId_56_F|$rpId_56_F|; \
+			s|\$de_x_N|$de_x_N|; \
+			s|\$de_x_F|$de_x_F|; \
+			s|\$de_y_N|$de_y_N|; \
+			s|\$de_y_F|$de_y_F|; \
+		" > "$dir/$aligFile"
+
+
+
+	cat "$dir/template_cfg.py" | sed "\
+			s|\$ERA_MOD_PATH|$era_mod_path|;\
+			s|\$ERA|$era|;\
+			s|\$CONFIG|$config|;\
+			s|\$N_EVENTS|$events|;\
+			s|\$OUT_LHCINFO|$out_lhcInfo|;\
+			s|\$OUT_TRACKS|$out_tracks|;\
+			s|\$OUT_PROTONS|$out_protons|;\
+		" > "$dir/$cfgFile"
+
+	# cmsRun "$cfg" &> "$log" &
+	pids="$pids $!"
+
+
+
+	# cp "template_cfg.py" "$dir/$cfgFile"
+
+	(
+		echo "process.maxEvents.input = int($events)"
+
+		cwd=`pwd -P`
+		cwd=${cwd#*proton_simulation_validation/}
+
+		echo "for p in process.ctppsCompositeESSource.periods:"
+		echo "  p.ctppsRPAlignmentCorrectionsDataXML.MisalignedFiles += cms.vstring(\"$cwd/$dir/$aligFile\")"
+		echo "process.ctppsProtonReconstructionSimulationValidator.outputFile = \"misalignment_${tag}_validation.root\""
+	) >> "$dir/$cfgFile"
+
+	cd "$dir"
+
+	cmsRun "$cfgFile" &> "$logFile" &
+
+	cd - &> /dev/null
+}
+
+
+#----------------------------------------------------------------------------------------------------
+
+function Run()
+{
+
+	events="1E4"
+	if [ -n "$1" ]
+	then
+		events="$1"
+	fi
+
+	inputDir="."
+	if [ -n "$SCRAM_TEST_PATH" ]
+	then
+		inputDir="$SCRAM_TEST_PATH/simu"
+		events="1E2"
+	fi
+
+	events="$1"
+	dir="."
+
+
+
+	# Check the input argument and set the appropriate configuration
+	if [[ "$2" == "2016" || "$2" == "2017" || "$2" == "2018" ]]; then
+		args=("$2" "Configuration.Eras" "Run2_$2" )
+	elif [[ "$2" == "2022" ]]; then
+		args=("2022" "Configuration.ProcessModifiers" "Run3_CTPPS_directSim")
+	else
+		echo "Invalid year: $2"
+		exit 1
+	fi
+
+
+	# Call RunOne with the appropriate arguments
+	RunOne "${args[0]}" "${args[1]}" "${args[2]}" "none" "0" "0" "0" "0"
+	RunOne "${args[0]}" "${args[1]}" "${args[2]}"  "x_sym" "+150" "+150" "0" "0"
+	RunOne "${args[0]}" "${args[1]}" "${args[2]}"  "x_asym" "-10" "+10" "0" "0"
+	RunOne "${args[0]}" "${args[1]}" "${args[2]}"  "y_sym" "0" "0" "+100" "+100"
+	RunOne "${args[0]}" "${args[1]}" "${args[2]}"  "y_asym" "0" "0" "-10" "+10"
+
+
+}
+
+#----------------------------------------------------------------------------------------------------
+
+
+Run "$1" "$2"
+
+wait
