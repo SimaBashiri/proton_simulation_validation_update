@@ -19,6 +19,6 @@ mv Validations ${dir}
 
 # 3. Run validation (replace <my_version> with your preferred name)
 ./submit <my_version>
-```bash
+
 
 The results can be found in data/<my_version> directory.
